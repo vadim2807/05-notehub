@@ -1,0 +1,51 @@
+.app {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0px auto;
+    padding: 0 16px 16px;
+    min-width: 320px;
+  }
+  
+  .toolbar {
+    margin-bottom: 4px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 0;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .toolbar > *:first-child {
+    justify-self: start;
+  }
+
+  .toolbar > *:nth-child(2) {
+    justify-self: center;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .toolbar > *:last-child {
+    justify-self: end;
+  }
+  
+  .button {
+    padding: 6px 12px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #0d6efd;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  .button:hover {
+    background-color: #0b5ed7;
+  }
