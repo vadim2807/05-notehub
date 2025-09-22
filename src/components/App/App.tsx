@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
 import SearchBox from '../SearchBox/SearchBox';
 import Pagination from '../Pagination/Pagination';
@@ -7,30 +7,18 @@ import NoteList from '../NoteList/NoteList';
 import NoteForm from '../NoteForm/NoteForm';
 import Modal from '../Modal/Modal';
 import css from './App.module.css';
-import { fetchNotes, createNote as apiCreateNote, deleteNote as apiDeleteNote } from '../../services/noteService';
+import { fetchNotes } from '../../services/noteService';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 0,
-      gcTime: 5 * 60 * 1000,
-    },
-  },
-});
-
-function AppContent() {
+function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  const queryClient = useQueryClient();
-
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearchTerm]);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['notes', currentPage, debouncedSearchTerm],
     queryFn: () => fetchNotes({
@@ -38,32 +26,11 @@ function AppContent() {
       perPage: 12,
       search: debouncedSearchTerm,
     }),
-  });
-
-  const createNoteMutation = useMutation({
-    mutationFn: apiCreateNote,
-    onSuccess: async () => {
-      setShowCreateForm(false);
-      setCurrentPage(1);
-      await queryClient.invalidateQueries({ queryKey: ['notes'] });
-      await queryClient.refetchQueries({ queryKey: ['notes'] });
-    },
-  });
-
-  const deleteNoteMutation = useMutation({
-    mutationFn: apiDeleteNote,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['notes'] });
-      await queryClient.refetchQueries({ queryKey: ['notes'] });
-    },
+    placeholderData: (previousData) => previousData,
   });
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-  };
-
-  const deleteNote = (noteId: string) => {
-    deleteNoteMutation.mutate(noteId);
   };
 
   const notes = data?.notes || [];
@@ -78,11 +45,13 @@ function AppContent() {
         />
         
         <div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
         
         <button 
@@ -115,19 +84,13 @@ function AppContent() {
 
         {showCreateForm && (
           <Modal onClose={() => setShowCreateForm(false)}>
-            <NoteForm
-              onSubmit={(noteData) => createNoteMutation.mutate(noteData)}
-              onCancel={() => setShowCreateForm(false)}
-              isLoading={createNoteMutation.isPending}
-            />
+            <NoteForm onCancel={() => setShowCreateForm(false)} />
           </Modal>
         )}
 
-        <NoteList
-          notes={notes}
-          onDelete={deleteNote}
-          isDeleting={deleteNoteMutation.isPending}
-        />
+        {notes.length > 0 && (
+          <NoteList notes={notes} />
+        )}
 
         {notes.length === 0 && !isLoading && (
           <div style={{ 
@@ -141,14 +104,6 @@ function AppContent() {
         )}
       </div>
     </div>
-  );
-}
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AppContent />
-    </QueryClientProvider>
   );
 }
 
